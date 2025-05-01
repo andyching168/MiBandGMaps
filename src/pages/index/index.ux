@@ -1,0 +1,218 @@
+<template>
+  <div class="demo-page" onclick="handleScreenTap">
+    <text class="title">{{ navigationInfo.direction || "等待導航開始" }}</text>
+    <text class="subtitle">{{ navigationInfo.turnDirection }}</text>
+    <text class="distance">{{ navigationInfo.turnDistance }}</text>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import configuration from "@system.configuration"
+import brightness from '@system.brightness'
+
+// 動態導入 interconnect
+let interconnect
+try {
+  interconnect = require('@system.interconnect')
+} catch (e) {
+  // 忽略錯誤，允許應用在模擬器中運行
+}
+
+export default {
+  // 页面级组件的数据模型，影响传入数据的覆盖机制：private内定义的属性不允许被覆盖
+  private: {
+    navigationInfo: {
+      turnDirection: "",
+      direction: "",
+      turnDistance: ""
+    },
+    conn: null,
+    isSimulator: false,
+    maxBrightness: 255,
+    midBrightness: 128,
+    screenTimeout: null
+  },
+
+  onInit() {
+    // 初始化導航信息
+    this.navigationInfo = {
+      turnDirection: "",
+      direction: "",
+      turnDistance: ""
+    }
+    
+    // 設置常亮
+    this.setKeepScreenOn(true)
+    // 設置半亮模式
+    this.setHalfBrightness()
+    
+    // 檢查是否為模擬器
+    if (!interconnect) {
+      this.isSimulator = true
+      return
+    }
+    
+    // 初始化連接
+    try {
+      // 直接使用 interconnect.instance() 獲取連接
+      this.conn = interconnect.instance()
+      
+      // 設置消息接收回調
+      this.conn.onmessage = (data) => {
+        try {
+          if (typeof data.data === 'string') {
+            const navigationData = JSON.parse(data.data)
+            this.receiveNavigationInfo(navigationData)
+            // 收到新導航信息時全亮5秒
+            this.handleScreenTap()
+          } else if (typeof data.data === 'object') {
+            this.receiveNavigationInfo(data.data)
+            // 收到新導航信息時全亮5秒
+            this.handleScreenTap()
+          }
+        } catch (e) {
+          console.log('解析消息失敗: ' + e.message)
+        }
+      }
+    } catch (e) {
+      console.log('初始化連接失敗: ' + e.message)
+    }
+  },
+
+  onShow() {
+    // 頁面顯示時設置半亮並保持常亮
+    this.setKeepScreenOn(true)
+    this.setHalfBrightness()
+  },
+
+  onHide() {
+    // 清除計時器
+    if (this.screenTimeout) {
+      clearTimeout(this.screenTimeout)
+      this.screenTimeout = null
+    }
+  },
+
+  onDestroy() {
+    // 清除計時器
+    if (this.screenTimeout) {
+      clearTimeout(this.screenTimeout)
+      this.screenTimeout = null
+    }
+    // 恢復屏幕亮度設置
+    this.restoreBrightness()
+  },
+
+  // 設置保持屏幕常亮
+  setKeepScreenOn(keepOn) {
+    brightness.setKeepScreenOn({
+      keepScreenOn: keepOn,
+      success: function() {
+        console.log('設置屏幕常亮成功')
+      },
+      fail: function(data, code) {
+        console.log('設置屏幕常亮失敗, code = ' + code)
+      }
+    })
+  },
+
+  // 設置全亮
+  setFullBrightness() {
+    brightness.setValue({
+      value: this.maxBrightness,
+      success: function() {
+        console.log('設置全亮成功')
+      },
+      fail: function(data, code) {
+        console.log('設置全亮失敗, code = ' + code)
+      }
+    })
+  },
+
+  // 設置半亮
+  setHalfBrightness() {
+    brightness.setValue({
+      value: this.midBrightness,
+      success: function() {
+        console.log('設置半亮成功')
+      },
+      fail: function(data, code) {
+        console.log('設置半亮失敗, code = ' + code)
+      }
+    })
+  },
+
+  // 恢復原始亮度設置
+  restoreBrightness() {
+    brightness.setMode({
+      mode: 0, // 手動模式
+      success: function() {
+        console.log('恢復亮度模式成功')
+      },
+      fail: function(data, code) {
+        console.log('恢復亮度模式失敗, code = ' + code)
+      }
+    })
+  },
+
+  // 處理屏幕點擊，設置全亮5秒然後恢復半亮
+  handleScreenTap() {
+    // 清除已有的計時器
+    if (this.screenTimeout) {
+      clearTimeout(this.screenTimeout)
+      this.screenTimeout = null
+    }
+    
+    // 設置全亮
+    this.setFullBrightness()
+    
+    // 5秒後恢復半亮
+    this.screenTimeout = setTimeout(() => {
+      this.setHalfBrightness()
+      this.screenTimeout = null
+    }, 5000)
+  },
+
+  // 接收導航信息
+  receiveNavigationInfo(data) {
+    if (data.turnDirection !== undefined && data.direction !== undefined && data.turnDistance !== undefined) {
+      this.navigationInfo = data
+    }
+  }
+}
+</script>
+
+<style>
+.demo-page {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: black;
+  width: 100%;
+  height: 100%;
+}
+
+.title {
+  font-size: 25px;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #FFFFFF;
+}
+
+.subtitle {
+  font-size: 40px;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #FFFFFF;
+}
+
+.distance {
+  font-size: 25px;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #FFFFFF;
+}
+</style>
+
