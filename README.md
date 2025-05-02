@@ -1,5 +1,7 @@
 # MiBandGMaps 導航應用
 
+![image](https://github.com/andyching168/MiBandGMaps/blob/main/xiaomi_band-2025-05-02-23-52-05.png)
+
 這是一個用於小米手環的 Google Maps 導航應用，可以將手機上的導航信息同步到手環上顯示。
 需搭配[Android端APP](https://github.com/andyching168/MiBandGMaps-Android)使用
 ## 功能特點
