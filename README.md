@@ -1,7 +1,7 @@
 # MiBandGMaps 導航應用
 
 這是一個用於小米手環的 Google Maps 導航應用，可以將手機上的導航信息同步到手環上顯示。
-
+需搭配[Android端APP](https://github.com/andyching168/MiBandGMaps-Android)使用
 ## 功能特點
 
 - 實時顯示導航方向（左轉、右轉、直行等）
