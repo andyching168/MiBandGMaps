@@ -1,0 +1,21 @@
+{
+  "left": "左轉",
+  "right": "右轉",
+  "straight": "直行", 
+  "GoStraight": "直行\n匯入",
+  "side_left": "靠左\n行駛",
+  "side_right": "靠右\n行駛",
+  "ForkRight": "靠右\n分岔",
+  "ForkLeft": "靠左\n分岔",
+  "ExitRight": "靠右\n出口離",
+  "SharpTurnLeft": "急左轉",
+  "SharpTurnRight": "急右轉",
+  "Roundabout": "圓環",
+  "Exit1st": "第一個\n出口離",
+  "Exit2nd": "第二個\n出口離",
+  "UTurnLeft": "迴轉",
+  "DestinationLeft": "目的地\n在左側",
+  "DestinationRight": "目的地\n在右側",
+  "DestinationFront": "目的地\n在前方",
+  "Blank": ""
+} 
