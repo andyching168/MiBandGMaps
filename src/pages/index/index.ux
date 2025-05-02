@@ -29,9 +29,17 @@ export default {
     },
     conn: null,
     isSimulator: false,
+    isDemoMode: true, // 添加演示模式標誌
     maxBrightness: 255,
     midBrightness: 128,
-    screenTimeout: null
+    screenTimeout: null,
+    demoDataIndex: 0, // 用於循環演示數據
+    demoData: [ // 演示用的導航數據
+      { turnDirection: "左轉", direction: "中正路/新北市特一號道路", turnDistance: "100公尺" },
+      { turnDirection: "右轉", direction: "連城路/新生街", turnDistance: "50公尺" },
+      { turnDirection: "直行", direction: "飄向遠方", turnDistance: "200公尺" },
+      { turnDirection: "迴轉", direction: "前方", turnDistance: "30公尺" }
+    ]
   },
 
   onInit() {
@@ -42,48 +50,60 @@ export default {
       turnDistance: ""
     }
     
-    // 設置常亮
-    this.setKeepScreenOn(true)
-    // 設置半亮模式
-    this.setHalfBrightness()
-    
-    // 檢查是否為模擬器
-    if (!interconnect) {
+    // 檢測是否為模擬器
+    try {
+      // 嘗試獲取亮度值，如果失敗則認為是模擬器
+      brightness.getValue({
+        success: () => {
+          this.isSimulator = false
+          console.log('運行在真實設備上')
+        },
+        fail: () => {
+          this.isSimulator = true
+          console.log('運行在模擬器上')
+          if (this.isDemoMode) {
+            this.startDemoMode()
+          }
+        }
+      })
+    } catch (e) {
       this.isSimulator = true
-      return
+      console.log('運行在模擬器上（捕獲到異常）')
+      if (this.isDemoMode) {
+        this.startDemoMode()
+      }
     }
     
-    // 初始化連接
-    try {
-      // 直接使用 interconnect.instance() 獲取連接
-      this.conn = interconnect.instance()
-      
-      // 設置消息接收回調
-      this.conn.onmessage = (data) => {
-        try {
-          if (typeof data.data === 'string') {
-            const navigationData = JSON.parse(data.data)
-            this.receiveNavigationInfo(navigationData)
-            // 收到新導航信息時全亮5秒
-            this.handleScreenTap()
-          } else if (typeof data.data === 'object') {
-            this.receiveNavigationInfo(data.data)
-            // 收到新導航信息時全亮5秒
-            this.handleScreenTap()
+    // 如果不是模擬器，則初始化連接
+    if (!this.isSimulator) {
+      try {
+        this.conn = interconnect.instance()
+        this.conn.onmessage = (data) => {
+          try {
+            if (typeof data.data === 'string') {
+              const navigationData = JSON.parse(data.data)
+              this.receiveNavigationInfo(navigationData)
+              this.handleScreenTap()
+            } else if (typeof data.data === 'object') {
+              this.receiveNavigationInfo(data.data)
+              this.handleScreenTap()
+            }
+          } catch (e) {
+            console.log('解析消息失敗: ' + e.message)
           }
-        } catch (e) {
-          console.log('解析消息失敗: ' + e.message)
         }
+      } catch (e) {
+        console.log('初始化連接失敗: ' + e.message)
       }
-    } catch (e) {
-      console.log('初始化連接失敗: ' + e.message)
     }
   },
 
   onShow() {
     // 頁面顯示時設置半亮並保持常亮
-    this.setKeepScreenOn(true)
-    this.setHalfBrightness()
+    if (!this.isSimulator) {
+      this.setKeepScreenOn(true)
+      this.setHalfBrightness()
+    }
   },
 
   onHide() {
@@ -106,41 +126,53 @@ export default {
 
   // 設置保持屏幕常亮
   setKeepScreenOn(keepOn) {
-    brightness.setKeepScreenOn({
-      keepScreenOn: keepOn,
-      success: function() {
-        console.log('設置屏幕常亮成功')
-      },
-      fail: function(data, code) {
-        console.log('設置屏幕常亮失敗, code = ' + code)
-      }
-    })
+    try {
+      brightness.setKeepScreenOn({
+        keepScreenOn: keepOn,
+        success: function() {
+          console.log('設置屏幕常亮成功')
+        },
+        fail: function(data, code) {
+          console.log('設置屏幕常亮失敗, code = ' + code)
+        }
+      })
+    } catch (e) {
+      console.log('設置屏幕常亮時發生錯誤: ' + e.message)
+    }
   },
 
   // 設置全亮
   setFullBrightness() {
-    brightness.setValue({
-      value: this.maxBrightness,
-      success: function() {
-        console.log('設置全亮成功')
-      },
-      fail: function(data, code) {
-        console.log('設置全亮失敗, code = ' + code)
-      }
-    })
+    try {
+      brightness.setValue({
+        value: this.maxBrightness,
+        success: function() {
+          console.log('設置全亮成功')
+        },
+        fail: function(data, code) {
+          console.log('設置全亮失敗, code = ' + code)
+        }
+      })
+    } catch (e) {
+      console.log('設置全亮時發生錯誤: ' + e.message)
+    }
   },
 
   // 設置半亮
   setHalfBrightness() {
-    brightness.setValue({
-      value: this.midBrightness,
-      success: function() {
-        console.log('設置半亮成功')
-      },
-      fail: function(data, code) {
-        console.log('設置半亮失敗, code = ' + code)
-      }
-    })
+    try {
+      brightness.setValue({
+        value: this.midBrightness,
+        success: function() {
+          console.log('設置半亮成功')
+        },
+        fail: function(data, code) {
+          console.log('設置半亮失敗, code = ' + code)
+        }
+      })
+    } catch (e) {
+      console.log('設置半亮時發生錯誤: ' + e.message)
+    }
   },
 
   // 恢復原始亮度設置
@@ -179,6 +211,20 @@ export default {
     if (data.turnDirection !== undefined && data.direction !== undefined && data.turnDistance !== undefined) {
       this.navigationInfo = data
     }
+  },
+
+  // 啟動演示模式
+  startDemoMode() {
+    console.log('啟動演示模式')
+    // 立即顯示第一組數據
+    this.receiveNavigationInfo(this.demoData[this.demoDataIndex])
+    
+    // 每5秒切換一次數據
+    setInterval(() => {
+      this.demoDataIndex = (this.demoDataIndex + 1) % this.demoData.length
+      this.receiveNavigationInfo(this.demoData[this.demoDataIndex])
+      console.log('切換演示數據: ' + JSON.stringify(this.demoData[this.demoDataIndex]))
+    }, 5000)
   }
 }
 </script>
@@ -193,23 +239,23 @@ export default {
   width: 100%;
   height: 100%;
 }
-
+/* 道路 */
 .title {
-  font-size: 25px;
+  font-size: 30px;
   text-align: center;
   margin-bottom: 10px;
   color: #FFFFFF;
 }
-
+/* 方向 */
 .subtitle {
-  font-size: 40px;
+  font-size: 50px;
   text-align: center;
   margin-bottom: 10px;
   color: #FFFFFF;
-}
-
+} 
+/* 距離 */
 .distance {
-  font-size: 25px;
+  font-size: 35px;
   text-align: center;
   margin-bottom: 10px;
   color: #FFFFFF;
