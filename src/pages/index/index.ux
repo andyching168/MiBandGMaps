@@ -1,5 +1,6 @@
 <template>
   <div class="demo-page" onclick="handleScreenTap">
+    <text class="clock">{{ clock }}</text>
     <text class="title">{{ navigationInfo.direction || "等待導航開始" }}</text>
     <text class="subtitle">{{ navigationInfo.turnDirection }}</text>
     <text class="distance">{{ navigationInfo.turnDistance }}</text>
@@ -43,7 +44,9 @@ export default {
       { turnDirection: "Roundabout", direction: "進入圓環", turnDistance: "150公尺" },
       { turnDirection: "Exit1st", direction: "圓環第一出口", turnDistance: "80公尺" },
       { turnDirection: "DestinationFront", direction: "目的地就在前方", turnDistance: "10公尺" }
-    ]
+    ],
+    clock: '',
+    clockInterval: null,
   },
 
   onInit() {
@@ -100,6 +103,12 @@ export default {
         console.log('初始化連接失敗: ' + e.message)
       }
     }
+
+    // 啟動時鐘
+    this.updateClock()
+    this.clockInterval = setInterval(() => {
+      this.updateClock()
+    }, 30000) // 每30秒更新一次
   },
 
   onShow() {
@@ -126,6 +135,12 @@ export default {
     }
     // 恢復屏幕亮度設置
     this.restoreBrightness()
+
+    // 清除時鐘計時器
+    if (this.clockInterval) {
+      clearInterval(this.clockInterval)
+      this.clockInterval = null
+    }
   },
 
   // 設置保持屏幕常亮
@@ -233,7 +248,15 @@ export default {
       this.receiveNavigationInfo(this.demoData[this.demoDataIndex])
       console.log('切換演示數據: ' + JSON.stringify(this.demoData[this.demoDataIndex]))
     }, 5000)
-  }
+  },
+
+  // 更新時鐘
+  updateClock() {
+    const now = new Date()
+    const h = now.getHours().toString().padStart(2, '0')
+    const m = now.getMinutes().toString().padStart(2, '0')
+    this.clock = `${h}:${m}`
+  },
 }
 </script>
 
@@ -280,6 +303,13 @@ export default {
   text-align: center;
   margin-bottom: 10px;
   color: #FFFFFF;
+}
+/* 時鐘 */
+.clock {
+  font-size: 40px;
+  color: #00FF00;
+  text-align: center;
+  margin-bottom: 20px;
 }
 </style>
 
